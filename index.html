@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI CBMPE - Organograma Interativo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cbmpeNavy: '#1B2A4A',
+                        cbmpeOrange: '#d97706',
+                        cbmpeYellow: '#ca8a04'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+        body {
+            background-color: #ffffff;
+            color: #1B2A4A;
+            background-image:
+                radial-gradient(circle at 15% 0%, rgba(217, 119, 6, 0.08), transparent 40%),
+                radial-gradient(circle at 85% 10%, rgba(202, 138, 4, 0.06), transparent 40%),
+                linear-gradient(rgba(27,42,74,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(27,42,74,0.035) 1px, transparent 1px);
+            background-size: auto, auto, 40px 40px, 40px 40px;
+            min-height: 100vh;
+        }
+        .page-wrap { max-width: 1680px; margin: 0 auto; }
+        @media (max-width: 900px) {
+            body { padding: 0.5rem !important; }
+        }
+        .connector-line { background-color: #94a3b8; }
+        .tree-line-v { width: 2px; background: linear-gradient(to bottom, #94a3b8, #cbd5e1); margin: 0 auto; position: relative; }
+        .tree-line-h { height: 2px; background-color: #94a3b8; }
+        .org-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .org-card::before {
+            content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+            transform: translateX(-100%); transition: transform 0.6s ease;
+        }
+        .org-card:hover::before { transform: translateX(100%); }
+        .org-card:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 12px 24px -6px rgba(30,41,59,0.15), 0 0 0 1px rgba(217,119,6,0.3); }
+        .card-main { box-shadow: 0 8px 30px -6px rgba(217, 119, 6, 0.35); }
+        .card-main-yellow { box-shadow: 0 8px 30px -6px rgba(202, 138, 4, 0.35); }
+        .card-main:hover, .card-main-yellow:hover { transform: translateY(-5px) scale(1.02); }
+        .fade-view { animation: fadeSlideIn 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d97706; }
+        .glass { backdrop-filter: blur(6px); }
+        .glow-badge { box-shadow: 0 0 12px rgba(217,119,6,0.5); }
+        .kpi-card { transition: all 0.25s ease; }
+        .kpi-card:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.5); }
+    </style>
+</head>
+<body class="p-6">
+<div class="page-wrap">
+
+    <!-- Header -->
+    <div class="glass bg-white/90 border border-slate-200 rounded-2xl p-5 mb-8 flex justify-between items-center shadow-xl relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-amber-600/10 via-transparent to-transparent pointer-events-none"></div>
+        <div class="relative z-10">
+            <h1 class="text-2xl font-black text-cbmpeNavy tracking-wide flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center shadow-lg glow-badge">
+                    <i class="fa-solid fa-sitemap text-white"></i>
+                </span>
+                CBMPE - Corpo de Bombeiros Militar de Pernambuco
+            </h1>
+            <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Painel Interativo de Gestão Estratégica do CBMPE
+            </p>
+        </div>
+        <div class="relative z-10 flex items-center gap-3">
+            <button id="btn-back-panel" onclick="goBackPanel()" class="hidden bg-slate-100 hover:bg-slate-200 text-cbmpeNavy font-bold py-2.5 px-5 rounded-lg border border-slate-300 transition-all flex items-center gap-2 shadow-lg hover:-translate-y-0.5">
+                <i class="fa-solid fa-rotate-left"></i> Voltar ao Painel Anterior
+            </button>
+            <button id="btn-back" onclick="showHub()" class="hidden bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2.5 px-5 rounded-lg border border-amber-400/50 transition-all flex items-center gap-2 shadow-lg hover:shadow-amber-500/30 hover:-translate-y-0.5">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Organograma
+            </button>
+        </div>
+    </div>
+
+    <!-- HUB DO ORGANOGRAMA -->
+    <div class="mobile-hint text-center text-[11px] text-amber-600 mb-2" style="display:none;"><i class="fa-solid fa-arrows-left-right"></i> Arraste o organograma para os lados</div>
+    <div id="hub-view" class="space-y-8">
+        
+        <!-- COMANDO GERAL & ASSESSORIAS -->
+        <div class="flex flex-col items-center w-full">
+            
+            <!-- Bloco Comando Geral -->
+            <div class="relative flex flex-col items-center w-full">
+                <div class="relative flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-0 w-full">
+                    <!-- Totais Gerais da Corporação - atalhos para os indicadores do Comando Geral -->
+                    <div class="order-2 lg:order-1 lg:absolute lg:right-full lg:mr-6 grid grid-cols-2 gap-2 w-full max-w-xs lg:w-56 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                        <div onclick="abrirAtalhoComandoGeral('Efetivo')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">Efetivo</div>
+                        </div>
+                        <div onclick="abrirAtalhoComandoGeral('Viaturas')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">Viaturas</div>
+                        </div>
+                        <div onclick="abrirAtalhoComandoGeral('Materiais')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">Materiais</div>
+                        </div>
+                        <div onclick="abrirAtalhoComandoGeral('Finanças')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">Finanças</div>
+                        </div>
+                    </div>
+
+                    <!-- Comando Geral (Centralizado) -->
+                    <div onclick="openPanel('COMANDO GERAL')" class="order-1 lg:order-2 org-card card-main bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 border-2 border-amber-300 rounded-xl p-4 w-72 text-center cursor-pointer relative z-10">
+                        <div class="flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-star text-amber-200 text-sm"></i>
+                            <div class="text-lg font-black text-white uppercase tracking-wider">COMANDO GERAL</div>
+                            <i class="fa-solid fa-star text-amber-200 text-sm"></i>
+                        </div>
+                        
+                        <div class="text-[11px] text-amber-200 tracking-widest mt-0.5">Comandante Geral</div>
+                        <div class="mt-2 text-[10px] bg-black/20 rounded-full py-1 px-3 text-amber-100 inline-flex items-center gap-1 font-semibold">
+                            <i class="fa-solid fa-chart-line"></i> Detalhar
+                        </div>
+                    </div>
+
+                    <!-- Assessorias do Comando -->
+                    <div class="order-3 lg:absolute lg:left-full lg:ml-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 w-full max-w-md lg:w-80 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                        <div onclick="openPanel('GCG')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">GCG</div>
+                            
+                            <div class="text-[9px] text-slate-500">Chefe</div>
+                        </div>
+                        <div onclick="openPanel('AECI')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">AECI</div>
+                            
+                            <div class="text-[9px] text-slate-500">Assessor Especial</div>
+                        </div>
+                        <div onclick="openPanel('CPO')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">CPO</div>
+                            
+                            <div class="text-[9px] text-slate-500">Chefe</div>
+                        </div>
+                        <div onclick="openPanel('CCS')" class="org-card lg:col-span-2 lg:col-start-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">CCS</div>
+                            
+                            <div class="text-[9px] text-slate-500">Chefe</div>
+                        </div>
+                        <div onclick="openPanel('CI')" class="org-card lg:col-span-2 lg:col-start-4 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                            <div class="text-xs font-bold text-cbmpeNavy">CI</div>
+                            
+                            <div class="text-[9px] text-slate-500">Chefe</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linha Conectora V, perfeitamente centralizada sob o card do Comando Geral -->
+                <div class="tree-line-v h-8"></div>
+            </div>
+
+            <!-- Bloco Subcomando Geral -->
+            <div class="relative flex flex-col items-center w-full">
+                <div class="relative flex items-center justify-center">
+                    <!-- Subcomando Geral (Centralizado em uma linha só) -->
+                    <div id="node-subcomando" onclick="openPanel('SUBCOMANDO GERAL')" class="org-card card-main-yellow bg-gradient-to-br from-yellow-500 via-yellow-600 to-amber-700 border-2 border-yellow-300 rounded-xl p-4 w-72 text-center cursor-pointer relative z-10">
+                        <div class="flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-star text-yellow-200 text-sm"></i>
+                            <div class="text-lg font-black text-white uppercase tracking-wider whitespace-nowrap">SUBCOMANDO GERAL</div>
+                            <i class="fa-solid fa-star text-yellow-200 text-sm"></i>
+                        </div>
+                        
+                        <div class="text-[11px] text-yellow-200 tracking-widest mt-0.5">Subcomandante Geral</div>
+                        <div class="mt-2 text-[10px] bg-black/20 rounded-full py-1 px-3 text-yellow-100 inline-flex items-center gap-1 font-semibold">
+                            <i class="fa-solid fa-chart-line"></i> Detalhar
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Assessorias do Subcomando (abaixo no mobile, ao lado no desktop) -->
+                <div class="mt-4 lg:mt-0 lg:absolute lg:left-1/2 lg:ml-40 lg:top-0 grid grid-cols-3 lg:flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 w-full max-w-md lg:w-auto">
+                    <div onclick="openPanel('GSG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[10rem] text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">GSG</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
+                    </div>
+                    <div onclick="openPanel('AJG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[7rem] text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">AJG</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
+                    </div>
+                    <div onclick="openPanel('CPP')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[7rem] text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">CPP</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
+                    </div>
+                </div>
+
+                <!-- Linha Conectora V para Bifurcação -->
+                <div class="tree-line-v h-8"></div>
+            </div>
+
+            <!-- Container com conectores dinâmicos (SVG) ligando o Subcomando a DGO e DPLAG -->
+            <div id="tree-root-dgo-dplag" class="relative w-full pt-10">
+                <svg id="connectorSvg" class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index:0;"></svg>
+
+                <!-- BIFURCAÇÃO PRINCIPAL: DGO x DPLAG -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-[1400px] mx-auto relative" style="z-index:10;">
+
+                    <!-- LADO ESQUERDO: DGO (ATIVIDADE FIM) -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 w-full flex flex-col items-center">
+                        <div id="node-dgo" onclick="openPanel('DGO')" class="org-card bg-yellow-600 border-2 border-yellow-400 rounded-xl p-3 w-64 text-center cursor-pointer shadow-md mb-4 mt-1">
+                            <div class="text-base font-black text-white uppercase tracking-wider">DGO</div>
+                            
+                            <div class="text-[10px] text-yellow-200 tracking-widest">Diretor</div>
+                        </div>
+
+                        <!-- Regionais Operacionais da DGO -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                            <!-- DIM -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DIM')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer mb-2">
+                                    <div class="text-xs font-bold text-white">DIM</div>
+                                    
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div class="space-y-1.5 w-full">
+                                    <div onclick="openPanel('GBAPH')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">GBAPH</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('GBI')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">GBI</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('GBS')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">GBS</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('GBMar')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">GBMar</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('CAT/RMR')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CAT/RMR</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                </div>
+                            </div>
+
+                            <!-- DINTER I -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DINTER I')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer mb-2">
+                                    <div class="text-xs font-bold text-white">DINTER I</div>
+                                    
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div class="space-y-1.5 w-full">
+                                    <div onclick="openPanel('1º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">1º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('2º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">2º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('6º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">6º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('7º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">7º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('CAT/ZM')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CAT/ZM</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                    <div onclick="openPanel('CAT/AG')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CAT/AG</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                </div>
+                            </div>
+
+                            <!-- DINTER II -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DINTER II')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer mb-2">
+                                    <div class="text-xs font-bold text-white">DINTER II</div>
+                                    
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div class="space-y-1.5 w-full">
+                                    <div onclick="openPanel('3º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">3º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('4º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">4º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('5º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">5º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('9º GB')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">9º GB</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('CAT/SE')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CAT/SE</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                </div>
+                            </div>
+
+                            <!-- DIESP -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DIESP')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DIESP</div>
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LADO DIREITO: DPLAG (GESTAO E SUPORTE) -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 w-full flex flex-col items-center">
+                        <div id="node-dga" onclick="openPanel('DGA')" class="org-card bg-yellow-600 border-2 border-yellow-400 rounded-xl p-3 w-64 text-center cursor-pointer shadow-md mb-4 mt-1">
+                            <div class="text-base font-black text-white uppercase tracking-wider">DGA</div>
+                            
+                            <div class="text-[10px] text-yellow-200 tracking-widest">Diretor</div>
+                        </div>
+
+                        <!-- 4 Colunas Administrativas Integradas -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+                            <!-- Coluna 1: DGP / DVP / DJD -->
+                            <div class="space-y-2">
+                                <div onclick="openPanel('DGP')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DGP</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div onclick="openPanel('DVP')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DVP</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div onclick="openPanel('DJD')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DJD</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div onclick="openPanel('DPLAG')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DPLAG</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                            </div>
+
+                            <!-- Coluna 2: DF / DAS / DTIC -->
+                            <div class="space-y-2">
+                                <div onclick="openPanel('DF')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DF</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div onclick="openPanel('DAS')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DAS</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div onclick="openPanel('DTIC')" class="org-card bg-yellow-600/80 border border-yellow-400 rounded-lg p-2 text-center cursor-pointer">
+                                    <div class="text-xs font-bold text-white">DTIC</div>
+                                    
+                                    <div class="text-[7px] text-yellow-200">Diretor</div>
+                                </div>
+                            </div>
+
+                            <!-- Coluna 3: DLOG & SUBUNIDADES -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DLOG')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer mb-2">
+                                    <div class="text-xs font-bold text-white">DLOG</div>
+                                    
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div class="space-y-1.5 w-full">
+                                    <div onclick="openPanel('CMAN')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CMAN</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                    <div onclick="openPanel('CINT')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CINT</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                    <div onclick="openPanel('CEAO')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CEAO</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                </div>
+                            </div>
+
+                            <!-- Coluna 4: DEIP & SUBUNIDADES -->
+                            <div class="flex flex-col items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                                <div onclick="openPanel('DEIP')" class="org-card bg-yellow-600/90 border border-yellow-400 rounded-lg p-2 w-full text-center cursor-pointer mb-2">
+                                    <div class="text-xs font-bold text-white">DEIP</div>
+                                    
+                                    <div class="text-[8px] text-yellow-200">Diretor</div>
+                                </div>
+                                <div class="space-y-1.5 w-full">
+                                    <div onclick="openPanel('ABMG')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">ABMG</div><div class="text-[7px] text-gray-500">Comandante</div></div>
+                                    <div onclick="openPanel('CEFD')" class="org-card bg-slate-100 p-1.5 rounded text-center cursor-pointer border border-slate-300 hover:border-yellow-400"><div class="text-[10px] font-bold text-slate-800">CEFD</div><div class="text-[7px] text-gray-500">Chefe</div></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PAINEL INTERNO DRILL-DOWN -->
+    <div id="panel-view" class="hidden space-y-6">
+        <div class="glass bg-white/90 border border-slate-200 p-6 rounded-2xl flex justify-between items-center shadow-xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-amber-600/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="relative z-10">
+                <h2 id="panel-title" class="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-700 bg-clip-text text-transparent uppercase tracking-wide">DETALHAMENTO SETORIAL</h2>
+                <p id="panel-officer" class="text-sm text-slate-600 font-semibold mt-1 flex items-center gap-2"><i class="fa-solid fa-user-shield text-amber-600"></i> RESPONSÁVEL: -</p>
+            </div>
+        </div>
+
+        <!-- KPIs SUPERIORES -->
+        <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div onclick="openSubPage('Efetivo')" class="kpi-card bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:border-amber-500/60">
+                <div class="w-11 h-11 rounded-lg bg-blue-500/15 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-users"></i></div>
+                <div>
+                    <div class="text-xs text-cbmpeNavy font-semibold uppercase">Efetivo</div>
+                    <div id="kpi-efetivo" class="text-2xl font-black text-cbmpeNavy mt-0.5">0</div>
+                </div>
+            </div>
+            <div onclick="openSubPage('Viaturas')" class="kpi-card bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:border-amber-500/60">
+                <div class="w-11 h-11 rounded-lg bg-red-500/15 flex items-center justify-center text-red-600 text-lg"><i class="fa-solid fa-truck-medical"></i></div>
+                <div>
+                    <div class="text-xs text-cbmpeNavy font-semibold uppercase">Viaturas</div>
+                    <div id="kpi-viaturas" class="text-2xl font-black text-cbmpeNavy mt-0.5">0</div>
+                </div>
+            </div>
+            <div onclick="openSubPage('Materiais')" class="kpi-card bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:border-amber-500/60">
+                <div class="w-11 h-11 rounded-lg bg-indigo-500/15 flex items-center justify-center text-indigo-600 text-lg"><i class="fa-solid fa-briefcase-medical"></i></div>
+                <div>
+                    <div class="text-xs text-cbmpeNavy font-semibold uppercase">Materiais</div>
+                    <div id="kpi-materiais" class="text-2xl font-black text-cbmpeNavy mt-0.5">0</div>
+                </div>
+            </div>
+            <div onclick="openSubPage('Finanças')" class="kpi-card bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:border-amber-500/60">
+                <div class="w-11 h-11 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-600 text-lg"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div>
+                    <div class="text-xs text-cbmpeNavy font-semibold uppercase">Finanças</div>
+                    <div id="kpi-financas" class="text-2xl font-black text-emerald-600 mt-0.5">R$ 0</div>
+                </div>
+            </div>
+            <div id="kpi-card-acoes" onclick="openSubPage('Ações Específicas')" class="kpi-card bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:border-amber-500/60">
+                <div class="w-11 h-11 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600 text-lg"><i class="fa-solid fa-check"></i></div>
+                <div>
+                    <div class="text-xs text-cbmpeNavy font-semibold uppercase">Ações Específicas</div>
+                    <div id="kpi-pjes" class="text-2xl font-black text-amber-600 mt-0.5">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA DETALHADA -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 overflow-x-auto shadow-lg">
+            <h3 class="text-base font-bold text-cbmpeNavy mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-amber-600"></i> Detalhamento dos Setores Vinculados à OME
+            </h3>
+            <table class="w-full text-left border-collapse">
+                <thead id="table-head" class="bg-gradient-to-r from-slate-100 to-slate-100 text-cbmpeNavy text-xs uppercase tracking-wider border-b border-amber-600/40 rounded-t-lg">
+                    <!-- Dinâmico -->
+                </thead>
+                <tbody id="table-body" class="divide-y divide-slate-200 text-sm">
+                    <!-- Dinâmico -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SUBPÁGINA DE DASHBOARD (EM CONSTRUÇÃO) -->
+    <div id="subpage-view" class="hidden space-y-6">
+        <div class="glass bg-white/90 border border-slate-200 p-6 rounded-2xl shadow-xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-amber-600/10 via-transparent to-transparent pointer-events-none"></div>
+            <div class="relative z-10">
+                <h2 id="subpage-title" class="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-700 bg-clip-text text-transparent uppercase tracking-wide">DASHBOARD</h2>
+                <p class="text-sm text-slate-500 font-semibold mt-1 flex items-center gap-2"><i class="fa-solid fa-chart-simple text-amber-600"></i> Detalhamento específico do indicador</p>
+            </div>
+        </div>
+
+        <div id="subpage-chart-block" class="bg-slate-50 border border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center gap-6 min-h-[420px] relative overflow-hidden">
+            <!-- Gráfico placeholder de fundo transparente -->
+            <svg viewBox="0 0 600 220" class="w-full max-w-2xl opacity-30 pointer-events-none" style="background:transparent;">
+                <polyline points="0,180 60,140 120,160 180,90 240,120 300,60 360,100 420,50 480,80 540,30 600,70"
+                    fill="none" stroke="#d97706" stroke-width="3" />
+                <line x1="0" y1="200" x2="600" y2="200" stroke="#94a3b8" stroke-width="2"/>
+                <line x1="0" y1="0" x2="0" y2="200" stroke="#94a3b8" stroke-width="2"/>
+            </svg>
+
+            <div class="relative z-10 flex flex-col items-center gap-3 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-600 text-2xl">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div class="text-xl font-black text-cbmpeNavy uppercase tracking-wide">Página em construção</div>
+                <p class="text-sm text-slate-500 max-w-md">Este dashboard específico ainda está sendo desenvolvido. Em breve, novos gráficos e indicadores detalhados estarão disponíveis aqui.</p>
+            </div>
+        </div>
+
+        <!-- Grade das 12 caixas do indicador (Ações Específicas / Efetivo / Viaturas / Materiais / Finanças) - preenchida dinamicamente via JS -->
+        <div id="subpage-atividades-block" class="hidden grid grid-cols-4 grid-rows-3 gap-4">
+            <!-- Dinâmico: ver popularGradeIndicador() -->
+        </div>
+    </div>
+
+    <script>
+        const oficialData = {
+            'COMANDO GERAL': { oficial: 'CEL BM ARARIPE', cargo: 'Comandante Geral' },
+            'SUBCOMANDO GERAL': { oficial: 'CEL BM CURVÊLO', cargo: 'Subcomandante Geral' },
+            'GCG': { oficial: 'MAJ BM RAFAEL', cargo: 'Chefe' },
+            'AECI': { oficial: 'TC BM JAILTON', cargo: 'Assessor Especial' },
+            'CPO': { oficial: 'MAJ BM FRANÇA', cargo: 'Chefe' },
+            'CPP': { oficial: 'MAJ BM FRANÇA', cargo: 'Chefe' },
+            'CCS': { oficial: 'MAJ BM GETÚLIO', cargo: 'Chefe' },
+            'CI': { oficial: 'TC BM SAMUEL', cargo: 'Chefe' },
+            'GSG': { oficial: 'MAJ BM ALLISSON CARNEIRO', cargo: 'Chefe' },
+            'DIESP': { oficial: 'CEL BM LUCENA', cargo: 'Diretor' },
+            'AJG': { oficial: 'MAJ BM CALADO', cargo: 'Chefe' },
+            'DGO': { oficial: 'CEL BM LEONARDO', cargo: 'Diretor' },
+            'DIM': { oficial: 'TC BM BRAINER', cargo: 'Diretor' },
+            'DINTER I': { oficial: 'TC BM IVÂNIO', cargo: 'Diretor' },
+            'DINTER II': { oficial: 'TC BM CLÉRISSON', cargo: 'Diretor' },
+            'GBAPH': { oficial: 'TC BM CLEITON', cargo: 'Comandante' },
+            'GBI': { oficial: 'TC BM DAMASCENO', cargo: 'Comandante' },
+            'GBS': { oficial: 'TC BM BARBALHO', cargo: 'Comandante' },
+            'GBMar': { oficial: 'MAJ BM OTÁVIO', cargo: 'Comandante' },
+            'CAT/RMR': { oficial: 'TC BM FLÁVIO CYSNEIROS', cargo: 'Chefe' },
+            '1º GB': { oficial: 'TC BM CARNEIRO', cargo: 'Comandante' },
+            '2º GB': { oficial: 'TC BM DANTAS', cargo: 'Comandante' },
+            '6º GB': { oficial: 'TC BM VIEIRA DE MELO', cargo: 'Comandante' },
+            '7º GB': { oficial: 'TC BM MELO JÚNIOR', cargo: 'Comandante' },
+            'CAT/ZM': { oficial: 'MAJ BM CIBELY', cargo: 'Chefe' },
+            'CAT/AG': { oficial: 'MAJ BM CLEDJONES', cargo: 'Chefe' },
+            '3º GB': { oficial: 'MAJ BM ISAAC', cargo: 'Comandante' },
+            '4º GB': { oficial: 'TC BM ALISSON', cargo: 'Comandante' },
+            '5º GB': { oficial: 'MAJ BM CASTRO', cargo: 'Comandante' },
+            '9º GB': { oficial: 'MAJ BM LAMARTINE', cargo: 'Comandante' },
+            'CAT/SE': { oficial: 'TC BM OLIVEIRA', cargo: 'Chefe' },
+            'DGA': { oficial: 'TC BM BARROS LEITE', cargo: 'Diretor' },
+            'DPLAG': { oficial: 'MAJ BM PEREIRA', cargo: 'Diretor' },
+            'DGP': { oficial: 'TC BM WAGNER', cargo: 'Diretor' },
+            'DVP': { oficial: 'TC BM PABLO', cargo: 'Diretor' },
+            'DJD': { oficial: 'TC BM BERENGUER', cargo: 'Diretor' },
+            'DF': { oficial: 'TC BM ANDERSON CARVALHO', cargo: 'Diretor' },
+            'DAS': { oficial: 'TC BM BARTOLOMEU', cargo: 'Diretor' },
+            'DTIC': { oficial: 'TC BM DALLAS', cargo: 'Diretor' },
+            'DLOG': { oficial: 'CEL BM VITORIANO', cargo: 'Diretor' },
+            'CMAN': { oficial: 'TC BM HELDER', cargo: 'Chefe' },
+            'CINT': { oficial: 'MAJ BM ZOVKA', cargo: 'Chefe' },
+            'CEAO': { oficial: 'TC BM JOSINALDO', cargo: 'Chefe' },
+            'DEIP': { oficial: 'CEL BM APRÍGIO', cargo: 'Diretor' },
+            'ABMG': { oficial: 'MAJ BM JOÃO PAULO', cargo: 'Comandante' },
+            'CEFD': { oficial: 'MAJ BM SILVA', cargo: 'Chefe' }
+        };
+
+        const subSetoresMap = {
+            'COMANDO GERAL': ['SUBCOMANDO GERAL', 'GCG', 'CI', 'CPO', 'AECI', 'CCS'],
+            'SUBCOMANDO GERAL': ['DGO', 'DGA', 'GSG', 'AJG', 'CPP'],
+            'GCG': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Assessoria Jurídica - AJ', '↳ Assessoria de Relações Institucionais'],
+            'AECI': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Controle Interno - DPCI'],
+            'CPO': ['↳ Presidência', '↳ Secretaria da Comissão de Promoção de Oficiais - SCPO', '↳ Membros'],
+            'CCS': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Seção de Ações Preventivas - SAP', '↳ Seção de Impressa e Jornalismo - SIJ', '↳ Seção de Marketing e Relações Públicas - SMRP', '↳ Seção de Cerimonial e Eventos - SCE'],
+            'CI': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Inteligência - DI', '↳ Divisão de Planejamento e Análise de Risco - DPAR'],
+            'GSG': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Assessoria de Atividades Técnicas - AAT', '↳ Assessoria de Gestão e Governança de Dados - AGGD'],
+            'DIESP': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Secretaria da Comissão Interna de Atividades Técnicas - SCIATec', '↳ Divisão de Planejamento de Operações - DPO', '↳ Divisão de Normatização e Doutrina - DND', '↳ Divisão de Isenção e Restituição - DIR', '↳ Divisão de Atendimento ao Público - DAP', '↳ Divisão de Projetos Contra Incêndio e Pânico - DPCIP'],
+            'AJG': ['↳ Chefia', '↳ Secretaria', '↳ Divisão de Protocolo, Publicação e Arquivo', '↳ Divisão Administrativa - DA'],
+            'CPP': ['↳ Presidência', '↳ Secretaria da Comissão de Promoção de Praças - SCPP', '↳ Membros'],
+            'DGO': ['DIM', 'DINTER I', 'DINTER II', 'DIESP', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Operações - DPO', '↳ Divisão de Apoio Operacional - DAO', '↳ Divisão de Coordenação Operacional - DCO'],
+            'DIM': ['GBI', 'GBAPH', 'GBS', 'GBMar', 'CAT/RMR', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Operações - DPO', '↳ Divisão de Resposta a Desastres - DRD'],
+            'GBI': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - Div. Op.', '↳ 1ª SBI/GBI (Jaboatão dos Guararapes)', '↳ 2ª SBI/GBI (Complexo QCG)', '↳ 3ª SBI/GBI (SUAPE)', '↳ 4ª SBI/GBI (AENA)', '↳ SBFN/GBI (Fernando de Noronha)', '↳ Divisão Administrativa - DA'],
+            'GBAPH': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - Div. Op.', '↳ 1ª SBAPH/GBAPH (Olinda)', '↳ 2ª SBAPH/GBAPH (Igarassu)', '↳ 3ª SBAPH/GBAPH (São Lourenço da Mata)', '↳ 4ª SBAPH/GBAPH (Motorresgate - Sede)', '↳ Divisão Administrativa - DA'],
+            'GBS': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - Div. Op.', '↳ 1ª SBS/GBS (Abreu e Lima)', '↳ 2ª SBS/GBS (Canil)', '↳ 3ª SBS/GBS (Mergulho)', '↳ 4ª SBS/GBS (Produtos Perigosos e Incêndio Florestais)', '↳ 5ª SBS/GBS (Respostas a Desastres)', '↳ Divisão Administrativa - DA'],
+            'GBMar': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - Div. Op.', '↳ 1ª SBSA/GBMar (Jaboatão dos Guararapes)', '↳ 2ª SBSA/GBMar (Jaboatão dos Guararapes)', '↳ Divisão Administrativa - DA'],
+            'CAT/RMR': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', '↳ Divisão de Serviços Técnicos - DSTec', '↳ 1ª SATec', '↳ 2ª SATec', '↳ 3ª SATec', '↳ 4ª SATec', '↳ Divisão Administrativa - DA'],
+            'DINTER I': ['1º GB', '2º GB', '6º GB', '7º GB', 'CAT/ZM', 'CAT/AG', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Operações - DPO', '↳ Divisão de Resposta Operacional - DRD'],
+            '1º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/1º GB (Vitória de Santo Antão)', '↳ 2ª SB/1º GB (Palmares)', '↳ 3ª SB/1º GB (Gravatá)', '↳ Divisão Administrativa - DA'],
+            '2º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DivOP', '↳ 1ª SB/2º GB (Caruaru)', '↳ 2ª SB/2º GB (Bezerros)', '↳ 3ª SB/2º GB (Belo Jardim)', '↳ 4ª SB/2º GB (Bonito)', '↳ 5ª SB/2º GB (Toritama)', '↳ 6ª SB/2º GB (Santa Cruz do Capibaribe)', '↳ 7ª SB/2º GB (Mergulho ZM e AG)', '↳ Divisão Administrativa - DA'],
+            '6º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/6º GB (Garanhuns)', '↳ 2ª SB/6º GB (Bom Conselho)', '↳ Divisão Administrativa - DA'],
+            '7º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/7º GB (Carpina)', '↳ 2ª SB/7º GB (Goiana)', '↳ 3ª SB/7º GB (Macaparana)', '↳ 4ª SB/7º GB (Surubim)', '↳ Divisão Administrativa - DA'],
+            'CAT/ZM': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', '↳ Divisão de Serviços Técnicos - DSTec', '↳ 1ª SATec (Carpina)', '↳ 2ª SATec (Goiana)', '↳ 3ª SATec (Vitória de Santo Antão)', '↳ Divisão Administrativa - DA'],
+            'CAT/AG': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', '↳ Divisão de Serviços Técnicos - DSTec', '↳ 1ª SATec (Caruaru)', '↳ 2ª SATec (Garanhuns)', '↳ 3ª SATec (Belo Jardim)', '↳ 4ª SATec (Toritama)', '↳ Divisão Administrativa - DA'],
+            'DINTER II': ['3º GB', '4º GB', '5º GB', '9º GB', 'CAT/SE', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Operações - DPO', '↳ Divisão de Resposta Operacional - DRD'],
+            '3º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/3º GB (Serra Talhada)', '↳ 2ª SB/3º GB (Afogados da Ingazeira)', '↳ 3ª SB/3º GB (São José do Egito)', '↳ 4ª SB/3º GB (Petrolândia)', '↳ Divisão Administrativa - DA'],
+            '4º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/4º GB (Petrolina)', '↳ 2ª SB/4º GB (Santa Maria da Boa Vista)', '↳ 3ª SB/4º GB (Mergulho SE)', '↳ Divisão Administrativa - DA'],
+            '5º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/5º GB (Salgueiro)', '↳ 2ª SB/5º GB (São José Belmonte)', '↳ 3ª SB/5º GB (Araripina)', '↳ 4ª SB/5º GB (Ouricuri)', '↳ Divisão Administrativa - DA'],
+            '9º GB': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', 'Divisão de Operações - DO', '↳ 1ª SB/9º GB (Arcoverde)', '↳ 2ª SB/9º GB (Pesqueira)', '↳ 3ª SB/9º GB (Custódia)', '↳ Divisão Administrativa - DA'],
+            'CAT/SE': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', '↳ Divisão de Planejamento e Serviços Técnicos', '↳ 1ª SATec (Salgueiro)', '↳ 2ª SATec (Petrolina)', '↳ 3ª SATec (Serra Talhada)', '↳ 4ª SATec (Arcoverde)', '↳ 5ª SATec (Araripina)', '↳ Divisão Administrativa - DA'],
+            'DGA': ['DGP', 'DVP', 'DJD', 'DF', 'DAS', 'DTIC', 'DLOG', 'DEIP', 'DPLAG', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm'],
+            'DPLAG': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento e Gestão Estratégica - DPGE', '↳ Divisão Projetos e Captação de Recursos - DPCR', '↳ Divisão de Convênios e Acordo de Cooperação - DCAC', '↳ Divisão de Tributação e Orçamento - DTO'],
+            'DGP': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Ativos - DA', '↳ Divisão de Direitos - DDIr', '↳ Divisão de Movimentação e Controle de Pessoal - DMCP', '↳ Divisão de Normatização e Programas - DNP'],
+            'DAS': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Programas Sociais - DPS', '↳ Divisão Administrativa'],
+            'DJD': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento de Justiça e Disciplina - DPJD', '↳ Divisão de Justiça e Disciplina - Div. JD'],
+            'DVP': ['↳ Diretoria', '↳ Divisão de Transferência para Reserva e Reformas - DTRR', '↳ Divisão de Inativos - DI', '↳ Divisão de Direitos'],
+            'DTIC': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Projetos - DP', '↳ Divisão de Coordenação Técnica - DCT'],
+            'DLOG': ['CMAN', 'CINT', 'CEAO', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento Logístico - DPL', '↳ Divisão de Gestão de Contratos - DGC', '↳ Divisão de Gestão de Patrimônio - DGPat', '↳ Divisão de Gestão de Transporte e Combustível - DGTC', '↳ Divisão de Controle de Inquéritos Administrativos e Logísticos - DCIAL', '↳ Divisão de Compras e Serviços - DCS'],
+            'DF': ['↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Planejamento e Administração Financeira e Orçamentária', '↳ Divisão de Prestação de Contas', '↳ Divisão de Tesouraria Geral', '↳ Divisão de Controle Orçamentário e Financeiro'],
+            'DEIP': ['ABMG', 'CEFD', '↳ Diretoria', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Ensino e Pesquisa - DEP', '↳ Divisão de Admissão, Credenciamento e Fiscalização - DACF'],
+            'CMAN': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Gestão de Manutenção - DGM', '↳ Divisão Administrativa - DA'],
+            'CINT': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Gestão de Suprimentos - DGS'],
+            'CEAO': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Divisão de Projetos - DP', '↳ Divisão Administrativa - DA'],
+            'ABMG': ['↳ Comando', '↳ Subcomando', '↳ Secretaria e Apoio do Comando - SAC', '↳ Divisão de Ensino - DE', '↳ Corpo de Alunos Oficiais', '↳ Corpo de Alunos Praças', '↳ Divisão Administrativa'],
+            'CEFD': ['↳ Chefia', '↳ Secretaria e Apoio Administrativo - SAAdm', '↳ Seção de Treinamento Físico'],
+        };
+
+        const TABLE_HEAD_PADRAO = `<tr><th class="p-3">Seção/Divisão/Grupamento/Centro</th><th class="p-3">Efetivo</th><th class="p-3">Viaturas</th><th class="p-3">Materiais</th><th class="p-3">Finanças</th><th class="p-3">Ações Específicas</th></tr>`;
+
+        // ===== Dados-base (fictícios, porém coerentes) e lógica de pertencimento/agregação =====
+        // Cada chave representa o efetivo/recursos PRÓPRIOS daquela OME (sem contar as subordinadas).
+        // O total exibido no painel de uma OME "guarda-chuva" é a soma de tudo que está abaixo dela + o que é próprio.
+        const orgData = {
+            'COMANDO GERAL': { efetivo: 22, viaturas: 4, materiaisPct: 95, financas: 180000, financaPct: 93, acoes: 120 },
+            'SUBCOMANDO GERAL': { efetivo: 14, viaturas: 3, materiaisPct: 92, financas: 95000, financaPct: 90, acoes: 70 },
+            'GCG': { efetivo: 18, viaturas: 2, materiaisPct: 88, financas: 45000, financaPct: 88, acoes: 40 },
+            'AECI': { efetivo: 12, viaturas: 1, materiaisPct: 90, financas: 35000, financaPct: 91, acoes: 30 },
+            'CPO': { efetivo: 10, viaturas: 1, materiaisPct: 85, financas: 25000, financaPct: 86, acoes: 25 },
+            'CCS': { efetivo: 16, viaturas: 2, materiaisPct: 87, financas: 40000, financaPct: 89, acoes: 45 },
+            'CI': { efetivo: 20, viaturas: 3, materiaisPct: 91, financas: 55000, financaPct: 90, acoes: 50 },
+
+            'GSG': { efetivo: 15, viaturas: 2, materiaisPct: 89, financas: 38000, financaPct: 88, acoes: 35 },
+            'DIESP': { efetivo: 30, viaturas: 3, materiaisPct: 86, financas: 75000, financaPct: 87, acoes: 90 },
+            'AJG': { efetivo: 14, viaturas: 1, materiaisPct: 90, financas: 32000, financaPct: 89, acoes: 28 },
+            'CPP': { efetivo: 9, viaturas: 1, materiaisPct: 92, financas: 20000, financaPct: 90, acoes: 18 },
+
+            'DGO': { efetivo: 24, viaturas: 3, materiaisPct: 90, financas: 60000, financaPct: 88, acoes: 55 },
+            'DIM': { efetivo: 20, viaturas: 3, materiaisPct: 90, financas: 55000, financaPct: 88, acoes: 50 },
+            'GBI': { efetivo: 95, viaturas: 12, materiaisPct: 93, financas: 210000, financaPct: 91, acoes: 340 },
+            'GBAPH': { efetivo: 80, viaturas: 10, materiaisPct: 92, financas: 185000, financaPct: 90, acoes: 290 },
+            'GBS': { efetivo: 70, viaturas: 9, materiaisPct: 91, financas: 160000, financaPct: 89, acoes: 260 },
+            'GBMar': { efetivo: 45, viaturas: 6, materiaisPct: 90, financas: 110000, financaPct: 88, acoes: 150 },
+            'CAT/RMR': { efetivo: 38, viaturas: 5, materiaisPct: 89, financas: 95000, financaPct: 87, acoes: 130 },
+
+            'DINTER I': { efetivo: 18, viaturas: 2, materiaisPct: 88, financas: 50000, financaPct: 86, acoes: 45 },
+            '1º GB': { efetivo: 60, viaturas: 7, materiaisPct: 90, financas: 140000, financaPct: 88, acoes: 210 },
+            '2º GB': { efetivo: 75, viaturas: 9, materiaisPct: 91, financas: 170000, financaPct: 89, acoes: 250 },
+            '6º GB': { efetivo: 50, viaturas: 6, materiaisPct: 88, financas: 115000, financaPct: 87, acoes: 175 },
+            '7º GB': { efetivo: 55, viaturas: 6, materiaisPct: 89, financas: 125000, financaPct: 87, acoes: 190 },
+            'CAT/ZM': { efetivo: 32, viaturas: 4, materiaisPct: 87, financas: 80000, financaPct: 86, acoes: 110 },
+            'CAT/AG': { efetivo: 30, viaturas: 4, materiaisPct: 87, financas: 78000, financaPct: 86, acoes: 105 },
+
+            'DINTER II': { efetivo: 16, viaturas: 2, materiaisPct: 87, financas: 48000, financaPct: 85, acoes: 40 },
+            '3º GB': { efetivo: 48, viaturas: 6, materiaisPct: 88, financas: 112000, financaPct: 86, acoes: 170 },
+            '4º GB': { efetivo: 52, viaturas: 6, materiaisPct: 89, financas: 118000, financaPct: 87, acoes: 180 },
+            '5º GB': { efetivo: 46, viaturas: 5, materiaisPct: 87, financas: 105000, financaPct: 85, acoes: 160 },
+            '9º GB': { efetivo: 40, viaturas: 5, materiaisPct: 86, financas: 95000, financaPct: 84, acoes: 145 },
+            'CAT/SE': { efetivo: 35, viaturas: 5, materiaisPct: 86, financas: 88000, financaPct: 84, acoes: 120 },
+
+            'DGA': { efetivo: 22, viaturas: 3, materiaisPct: 90, financas: 65000, financaPct: 90, acoes: 60 },
+            'DPLAG': { efetivo: 18, viaturas: 2, materiaisPct: 88, financas: 48000, financaPct: 88, acoes: 50 },
+            'DGP': { efetivo: 28, viaturas: 2, materiaisPct: 88, financas: 70000, financaPct: 89, acoes: 75 },
+            'DVP': { efetivo: 20, viaturas: 2, materiaisPct: 87, financas: 52000, financaPct: 88, acoes: 55 },
+            'DJD': { efetivo: 16, viaturas: 1, materiaisPct: 89, financas: 38000, financaPct: 90, acoes: 40 },
+            'DF': { efetivo: 24, viaturas: 2, materiaisPct: 91, financas: 95000, financaPct: 92, acoes: 65 },
+            'DAS': { efetivo: 18, viaturas: 2, materiaisPct: 86, financas: 42000, financaPct: 87, acoes: 48 },
+            'DTIC': { efetivo: 20, viaturas: 1, materiaisPct: 93, financas: 60000, financaPct: 91, acoes: 52 },
+
+            'DLOG': { efetivo: 26, viaturas: 4, materiaisPct: 89, financas: 80000, financaPct: 88, acoes: 70 },
+            'CMAN': { efetivo: 34, viaturas: 8, materiaisPct: 90, financas: 98000, financaPct: 89, acoes: 95 },
+            'CINT': { efetivo: 22, viaturas: 3, materiaisPct: 87, financas: 60000, financaPct: 86, acoes: 60 },
+            'CEAO': { efetivo: 19, viaturas: 2, materiaisPct: 88, financas: 55000, financaPct: 87, acoes: 52 },
+
+            'DEIP': { efetivo: 20, viaturas: 2, materiaisPct: 90, financas: 58000, financaPct: 89, acoes: 58 },
+            'ABMG': { efetivo: 65, viaturas: 5, materiaisPct: 91, financas: 150000, financaPct: 90, acoes: 220 },
+            'CEFD': { efetivo: 14, viaturas: 1, materiaisPct: 88, financas: 30000, financaPct: 87, acoes: 35 }
+        };
+
+        // Pertencimento real (quem soma em quem) - somente as OMEs que possuem caixa própria
+        const orgTree = {
+            'COMANDO GERAL': ['SUBCOMANDO GERAL', 'GCG', 'CI', 'CPO', 'AECI', 'CCS'],
+            'SUBCOMANDO GERAL': ['DGO', 'DGA', 'GSG', 'AJG', 'CPP'],
+            'DGO': ['DIM', 'DINTER I', 'DINTER II', 'DIESP'],
+            'DIM': ['GBI', 'GBAPH', 'GBS', 'GBMar', 'CAT/RMR'],
+            'DINTER I': ['1º GB', '2º GB', '6º GB', '7º GB', 'CAT/ZM', 'CAT/AG'],
+            'DINTER II': ['3º GB', '4º GB', '5º GB', '9º GB', 'CAT/SE'],
+            'DGA': ['DGP', 'DVP', 'DJD', 'DF', 'DAS', 'DTIC', 'DLOG', 'DEIP', 'DPLAG'],
+            'DLOG': ['CMAN', 'CINT', 'CEAO'],
+            'DEIP': ['ABMG', 'CEFD']
+        };
+
+        // Efetivo "próprio" de uma OME = soma do efetivo padronizado das suas linhas internas
+        // (Diretoria/Comando/Chefia, Assessoria, SAAdm, Divisões, Seções), excluindo as caixas
+        // próprias (que já entram pelo seu próprio total agregado).
+        function ownEfetivoDinamico(setor) {
+            const filhos = orgTree[setor] || [];
+            const itens = subSetoresMap[setor] || [];
+            const itensInternos = itens.filter(nome => !filhos.includes(nome));
+            return itensInternos.reduce((soma, nome) => soma + categoriaEfetivo(nome), 0);
+        }
+
+        // Soma total (próprio + subordinadas), recursivo. % de materiais/finanças = média ponderada pelo efetivo.
+        function getTotals(setor) {
+            const own = orgData[setor] || { efetivo: 20, viaturas: 2, materiaisPct: 88, financas: 40000, financaPct: 88, acoes: 40 };
+            const ownEfetivo = ownEfetivoDinamico(setor);
+            const filhos = orgTree[setor] || [];
+            let total = { efetivo: ownEfetivo, viaturas: own.viaturas, financas: own.financas, acoes: own.acoes };
+            let pesoMat = own.materiaisPct * ownEfetivo;
+            let pesoFin = own.financaPct * ownEfetivo;
+            let pesoBase = ownEfetivo;
+            filhos.forEach(filho => {
+                const ct = getTotals(filho);
+                total.efetivo += ct.efetivo;
+                total.viaturas += ct.viaturas;
+                total.financas += ct.financas;
+                total.acoes += ct.acoes;
+                pesoMat += ct.materiaisPct * ct.efetivo;
+                pesoFin += ct.financaPct * ct.efetivo;
+                pesoBase += ct.efetivo;
+            });
+            total.materiaisPct = pesoBase > 0 ? Math.round(pesoMat / pesoBase) : own.materiaisPct;
+            total.financaPct = pesoBase > 0 ? Math.round(pesoFin / pesoBase) : own.financaPct;
+            return total;
+        }
+
+        // Distribui um total inteiro entre n "linhas" (itens sem caixa própria), preservando a soma exata
+        // Padronização de efetivo por categoria de linha interna (não são caixas próprias)
+        function categoriaEfetivo(nome) {
+            const UNI = ['Chefia', 'Diretoria', 'Presidência', 'Comando', 'Subcomando'];
+            // Exceções pontuais (valor fixo diferente do padrão da categoria)
+            const EXCECOES_5 = [
+                'Membros',
+                'Seção de Ações Preventivas - SAP',
+                'Seção de Impressa e Jornalismo - SIJ',
+                'Seção de Cerimonial e Eventos - SCE',
+                'Seção de Marketing e Relações Públicas - SMRP'
+            ];
+            if (EXCECOES_5.includes(nome)) return 5;
+            if (UNI.includes(nome)) return 1;              // Diretoria / Comando / Chefia
+            if (/^Assessor/i.test(nome)) return 1;          // Assessoria
+            if (/^Secretaria/i.test(nome) || /SAAdm/i.test(nome)) return 5; // SAAdm
+            if (/^Divis/i.test(nome)) return 5;              // Divisões
+            return 50;                                       // Seções e demais unidades operacionais
+        }
+
+        function distribute(total, n) {
+            if (n <= 0) return [];
+            if (n === 1) return [total];
+            let pesos = [];
+            for (let i = 0; i < n; i++) pesos.push(n - i);
+            let somaPesos = pesos.reduce((a, b) => a + b, 0);
+            let bruto = pesos.map(w => total * w / somaPesos);
+            let piso = bruto.map(Math.floor);
+            let usado = piso.reduce((a, b) => a + b, 0);
+            let resto = total - usado;
+            let fracIdx = bruto.map((r, i) => ({ i, frac: r - Math.floor(r) })).sort((a, b) => b.frac - a.frac);
+            for (let k = 0; k < resto; k++) piso[fracIdx[k].i]++;
+            return piso;
+        }
+
+        function formatBRL(v) {
+            return v.toLocaleString('pt-BR');
+        }
+
+        function militarLabel(n) {
+            return n === 1 ? '1 Militar' : `${n} Militares`;
+        }
+
+        // ===== Estado de navegação (para o botão "Voltar ao Painel Anterior") =====
+        let panelHistory = [];
+        let currentPanel = null;
+        let cameFromSubpage = false;
+        let emItemConstrucao = false;
+        let subpageIndicadorAtual = null;
+        let subpageOcultarBotaoAtual = false;
+
+        function toggleInternos(el) {
+            const icon = el.querySelector('.toggle-icon');
+            const rows = document.querySelectorAll('#table-body .internos-row');
+            rows.forEach(r => r.classList.toggle('hidden'));
+            if (icon) icon.classList.toggle('rotate-90');
+        }
+
+        function openPanel(setor, isBack) {
+            // Empilha o painel atual no histórico, exceto quando estamos navegando "para trás"
+            if (!isBack && currentPanel && currentPanel !== setor && !document.getElementById('panel-view').classList.contains('hidden')) {
+                panelHistory.push(currentPanel);
+            }
+            currentPanel = setor;
+            cameFromSubpage = false;
+
+            document.getElementById('hub-view').classList.add('hidden');
+            document.getElementById('subpage-view').classList.add('hidden');
+            document.getElementById('panel-view').classList.remove('hidden');
+            document.getElementById('panel-view').classList.add('fade-view');
+            document.getElementById('btn-back').classList.remove('hidden');
+            document.getElementById('btn-back-panel').classList.toggle('hidden', panelHistory.length === 0);
+
+            // Oculta a caixa de "Ações Específicas" para os quadrantes de Comando/Subcomando Geral
+            const semAcoes = (setor === 'COMANDO GERAL' || setor === 'SUBCOMANDO GERAL');
+            document.getElementById('kpi-card-acoes').classList.toggle('hidden', semAcoes);
+            const kpiGrid = document.getElementById('kpi-grid');
+            kpiGrid.classList.toggle('md:grid-cols-5', !semAcoes);
+            kpiGrid.classList.toggle('md:grid-cols-4', semAcoes);
+
+            const info = oficialData[setor] || { oficial: 'OFICIAL BM', cargo: 'Comandante/Chefe' };
+            document.getElementById('panel-title').innerText = setor + " - Painel de Controle de Dados";
+            document.getElementById('panel-officer').innerText = info.cargo;
+
+            // KPIs = soma agregada (próprio + tudo que está subordinado a essa OME)
+            const totais = getTotals(setor);
+            document.getElementById('kpi-efetivo').innerText = militarLabel(totais.efetivo);
+            document.getElementById('kpi-viaturas').innerText = `${totais.viaturas} Unidades`;
+            document.getElementById('kpi-materiais').innerText = `${totais.materiaisPct}% Disponível`;
+            document.getElementById('kpi-financas').innerText = `R$ ${formatBRL(totais.financas)},00 Executado (${totais.financaPct}%)`;
+            document.getElementById('kpi-pjes').innerText = `${totais.acoes} Atividades`;
+
+            // Tabela
+            let thead = document.getElementById('table-head');
+            let tbody = document.getElementById('table-body');
+
+            if (subSetoresMap[setor]) {
+                thead.innerHTML = TABLE_HEAD_PADRAO;
+
+                const ownVals = orgData[setor] || { efetivo: 20, viaturas: 2, materiaisPct: 88, financas: 40000, financaPct: 88, acoes: 40 };
+                const filhos = orgTree[setor] || [];
+                // Linhas que NÃO são caixas próprias (seções internas) usam efetivo padronizado por categoria.
+                // Linhas que SÃO caixas próprias usam seu total já agregado (com subordinadas).
+                const itensInternos = subSetoresMap[setor].filter(nome => !filhos.includes(nome));
+
+                const distViaturas = distribute(ownVals.viaturas, itensInternos.length);
+                const distFinancas = distribute(ownVals.financas, itensInternos.length);
+                const distAcoes = distribute(ownVals.acoes, itensInternos.length);
+
+                let idxInterno = 0;
+                let htmlSubordinadas = "";
+                let htmlInternos = "";
+                let qtdInternos = 0;
+                let somaEfetivo = 0, somaViaturas = 0, somaFinancas = 0, somaAcoes = 0;
+                subSetoresMap[setor].forEach((sub) => {
+                    const ehCaixaPropria = filhos.includes(sub);
+                    let linha;
+                    if (ehCaixaPropria) {
+                        const ct = getTotals(sub);
+                        linha = ct;
+                    } else {
+                        linha = {
+                            efetivo: categoriaEfetivo(sub),
+                            viaturas: distViaturas[idxInterno],
+                            materiaisPct: ownVals.materiaisPct,
+                            financas: distFinancas[idxInterno],
+                            financaPct: ownVals.financaPct,
+                            acoes: distAcoes[idxInterno]
+                        };
+                        idxInterno++;
+                    }
+
+                    const isLink = !!oficialData[sub] && sub !== setor;
+                    // Todas as linhas internas (Comando, Subcomando, SAC, Divisão de Operações, SBs,
+                    // Divisão Administrativa etc.) têm agora a mesma hierarquia: mesma seta "↳" e
+                    // abrem/fecham juntas com o toggle principal do setor.
+                    const isIndentado = !isLink && sub.trim().startsWith('↳');
+                    const nomeExibido = isIndentado ? sub.replace(/^↳\s*/, '') : sub;
+
+                    const nomeCell = isLink
+                        ? `<span onclick="openPanel('${sub.replace(/'/g, "\\'")}')" class="cursor-pointer text-cbmpeNavy hover:text-amber-600 hover:underline underline-offset-2 inline-flex items-center gap-1.5">${sub} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></span>`
+                        : `<span class="text-cbmpeNavy inline-flex items-center gap-2"><span class="text-[13px] text-slate-400">↳</span>${nomeExibido}</span>`;
+
+                    let trClasses = 'hover:bg-slate-100';
+                    if (!isLink) {
+                        trClasses += ' internos-row hidden';
+                    }
+
+                    const linhaHtml = `<tr class="${trClasses}">
+                        <td class="p-3 font-bold">${nomeCell}</td>
+                        <td class="p-3 text-slate-600">${militarLabel(linha.efetivo)}</td>
+                        <td class="p-3 text-slate-600">${linha.viaturas} Unidades</td>
+                        <td class="p-3 text-slate-600 font-semibold">${linha.materiaisPct}% Disponível</td>
+                        <td class="p-3 text-emerald-600 font-semibold">R$ ${formatBRL(linha.financas)},00 Executado (${linha.financaPct}%)</td>
+                        <td class="p-3 text-cbmpeNavy">${linha.acoes} Atividades</td>
+                    </tr>`;
+
+                    if (isLink) {
+                        htmlSubordinadas += linhaHtml;
+                    } else {
+                        htmlInternos += linhaHtml;
+                        qtdInternos++;
+                        somaEfetivo += linha.efetivo;
+                        somaViaturas += linha.viaturas;
+                        somaFinancas += linha.financas;
+                        somaAcoes += linha.acoes;
+                    }
+                });
+
+                let htmlToggle = "";
+                if (qtdInternos > 0) {
+                    htmlToggle = `<tr class="cursor-pointer hover:bg-slate-100 border-t border-slate-300 bg-slate-50" onclick="toggleInternos(this)">
+                        <td class="p-3 font-bold text-cbmpeNavy select-none">
+                            <i class="fa-solid fa-caret-right toggle-icon mr-2 transition-transform"></i> ${setor}
+                        </td>
+                        <td class="p-3 text-slate-600">${militarLabel(somaEfetivo)}</td>
+                        <td class="p-3 text-slate-600">${somaViaturas} Unidades</td>
+                        <td class="p-3 text-slate-600 font-semibold">${ownVals.materiaisPct}% Disponível</td>
+                        <td class="p-3 text-emerald-600 font-semibold">R$ ${formatBRL(somaFinancas)},00 Executado (${ownVals.financaPct}%)</td>
+                        <td class="p-3 text-cbmpeNavy">${somaAcoes} Atividades</td>
+                    </tr>`;
+                }
+
+                tbody.innerHTML = htmlSubordinadas + htmlToggle + htmlInternos;
+            } else {
+                thead.innerHTML = TABLE_HEAD_PADRAO;
+                let matSpec = setor === 'CEAO' ? 'Materiais de engenharia e obras' : 'Sistemas Corporativos / Equipamentos';
+                tbody.innerHTML = `
+                    <tr class="hover:bg-slate-100"><td class="p-3 font-bold text-cbmpeNavy">Divisão de Operações e Planejamento</td><td class="p-3">18 Militares</td><td class="p-3">2 Unidades</td><td class="p-3">${matSpec}</td><td class="p-3 text-emerald-600 font-semibold">R$ 95.000,00 Executado (90%)</td><td class="p-3">60 Atividades</td></tr>
+                    <tr class="hover:bg-slate-100"><td class="p-3 font-bold text-cbmpeNavy">Núcleo Técnico e Administrativo</td><td class="p-3">14 Militares</td><td class="p-3">1 Unidade</td><td class="p-3">${matSpec}</td><td class="p-3 text-emerald-600 font-semibold">R$ 60.000,00 Executado (86%)</td><td class="p-3">45 Atividades</td></tr>
+                `;
+            }
+        }
+
+        function showHub() {
+            document.getElementById('panel-view').classList.add('hidden');
+            document.getElementById('subpage-view').classList.add('hidden');
+            document.getElementById('hub-view').classList.remove('hidden');
+            document.getElementById('hub-view').classList.add('fade-view');
+            document.getElementById('btn-back').classList.add('hidden');
+            document.getElementById('btn-back-panel').classList.add('hidden');
+            panelHistory = [];
+            currentPanel = null;
+            cameFromSubpage = false;
+            emItemConstrucao = false;
+            subpageIndicadorAtual = null;
+        }
+
+        // Indicadores que exibem a grade de 12 caixas (em vez do placeholder de gráfico)
+        const INDICADORES_COM_GRADE = ['Ações Específicas', 'Efetivo', 'Viaturas', 'Materiais', 'Finanças'];
+
+        // Preenche a grade de 12 caixas com o padrão "{Indicador} 01" ... "{Indicador} 12"
+        function popularGradeIndicador(indicador) {
+            const grade = document.getElementById('subpage-atividades-block');
+            let html = '';
+            for (let i = 1; i <= 12; i++) {
+                const numero = String(i).padStart(2, '0');
+                const nomeItem = `${indicador} ${numero}`;
+                html += `<div onclick="abrirItemEmConstrucao('${nomeItem}')" class="kpi-card bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center gap-1 text-center min-h-[110px] cursor-pointer"><i class="fa-solid fa-list-check text-amber-600 text-lg mb-1"></i><div class="text-sm font-bold text-cbmpeNavy">${nomeItem}</div></div>`;
+            }
+            grade.innerHTML = html;
+        }
+
+        // Abre a "subpágina" de dashboard específico de um indicador (Efetivo, Viaturas, Materiais, Finanças, Ações Específicas)
+        // ocultarBotaoVoltarPainel: quando true, esconde o botão "Voltar ao Painel Anterior" (usado pelos atalhos da página inicial)
+        function openSubPage(indicador, ocultarBotaoVoltarPainel) {
+            document.getElementById('hub-view').classList.add('hidden');
+            document.getElementById('panel-view').classList.add('hidden');
+            document.getElementById('subpage-view').classList.remove('hidden');
+            document.getElementById('subpage-view').classList.add('fade-view');
+            document.getElementById('subpage-title').innerText = `${indicador} — ${currentPanel || 'CBMPE'}`;
+            document.getElementById('btn-back').classList.remove('hidden');
+            document.getElementById('btn-back-panel').classList.toggle('hidden', !!ocultarBotaoVoltarPainel);
+            cameFromSubpage = true;
+            emItemConstrucao = false;
+            subpageIndicadorAtual = indicador;
+            subpageOcultarBotaoAtual = !!ocultarBotaoVoltarPainel;
+
+            const ehGrade = INDICADORES_COM_GRADE.includes(indicador);
+            document.getElementById('subpage-chart-block').classList.toggle('hidden', ehGrade);
+            document.getElementById('subpage-atividades-block').classList.toggle('hidden', !ehGrade);
+            if (ehGrade) {
+                popularGradeIndicador(indicador);
+            }
+        }
+
+        // Ao clicar em uma das 12 caixas (ex: "Viaturas 02"), exibe a "Página em construção"
+        // no lugar da grade, mantendo o título atualizado com o item clicado.
+        // O botão "Voltar ao Painel Anterior" sempre aparece aqui, para permitir retornar à grade de 12 caixas.
+        function abrirItemEmConstrucao(nomeItem) {
+            emItemConstrucao = true;
+            document.getElementById('subpage-title').innerText = `${nomeItem} — ${currentPanel || 'CBMPE'}`;
+            document.getElementById('subpage-chart-block').classList.remove('hidden');
+            document.getElementById('subpage-atividades-block').classList.add('hidden');
+            document.getElementById('btn-back-panel').classList.remove('hidden');
+        }
+
+        // Atalho das caixas "Efetivo", "Viaturas", "Materiais" e "Finanças" na página inicial:
+        // vai direto para a página com as 12 caixinhas do indicador (mesmo destino de
+        // "Comando Geral" > indicador), sem passar pela tela do painel do Comando Geral.
+        function abrirAtalhoComandoGeral(indicador) {
+            currentPanel = 'COMANDO GERAL';
+            openSubPage(indicador, true);
+        }
+
+        // Botão "Voltar ao Painel Anterior": sai da "página em construção" de volta para a grade de 12 caixas,
+        // sai da subpágina para o painel, ou navega para o painel anterior da pilha
+        function goBackPanel() {
+            if (emItemConstrucao) {
+                emItemConstrucao = false;
+                document.getElementById('subpage-title').innerText = `${subpageIndicadorAtual} — ${currentPanel || 'CBMPE'}`;
+                document.getElementById('subpage-chart-block').classList.add('hidden');
+                document.getElementById('subpage-atividades-block').classList.remove('hidden');
+                document.getElementById('btn-back-panel').classList.toggle('hidden', subpageOcultarBotaoAtual);
+                return;
+            }
+            if (cameFromSubpage) {
+                document.getElementById('subpage-view').classList.add('hidden');
+                document.getElementById('panel-view').classList.remove('hidden');
+                document.getElementById('panel-view').classList.add('fade-view');
+                cameFromSubpage = false;
+                document.getElementById('btn-back-panel').classList.toggle('hidden', panelHistory.length === 0);
+                return;
+            }
+            if (!panelHistory.length) return;
+            const anterior = panelHistory.pop();
+            openPanel(anterior, true);
+        }
+
+        // ===== Conectores dinâmicos entre Subcomando Geral -> DGO / DPLAG =====
+        function drawConnectors() {
+            const svg = document.getElementById('connectorSvg');
+            const container = document.getElementById('tree-root-dgo-dplag');
+            const start = document.getElementById('node-subcomando');
+            const dgo = document.getElementById('node-dgo');
+            const dplag = document.getElementById('node-dga');
+            if (!svg || !container || !start || !dgo || !dplag) return;
+            if (document.getElementById('hub-view').classList.contains('hidden')) return;
+
+            const containerRect = container.getBoundingClientRect();
+            svg.setAttribute('width', containerRect.width);
+            svg.setAttribute('height', containerRect.height);
+            svg.setAttribute('viewBox', `0 0 ${containerRect.width} ${containerRect.height}`);
+
+            const startRect = start.getBoundingClientRect();
+            const dgoRect = dgo.getBoundingClientRect();
+            const dplagRect = dplag.getBoundingClientRect();
+
+            // Ponto de partida: centro horizontal do card Subcomando, no topo deste container
+            // (a linha vertical estática do bloco Subcomando já cobre o trecho acima)
+            const sx = (startRect.left + startRect.right) / 2 - containerRect.left;
+            const sy = 0;
+
+            const dgoX = (dgoRect.left + dgoRect.right) / 2 - containerRect.left;
+            const dgoY = dgoRect.top - containerRect.top;
+
+            const dplagX = (dplagRect.left + dplagRect.right) / 2 - containerRect.left;
+            const dplagY = dplagRect.top - containerRect.top;
+
+            const midY = Math.max(sy + 6, Math.min(dgoY, dplagY) / 2);
+
+            svg.innerHTML = `
+                <path d="M ${sx} ${sy} L ${sx} ${midY} L ${dgoX} ${midY} L ${dgoX} ${dgoY}" fill="none" stroke="#94a3b8" stroke-width="2"/>
+                <path d="M ${sx} ${sy} L ${sx} ${midY} L ${dplagX} ${midY} L ${dplagX} ${dplagY}" fill="none" stroke="#94a3b8" stroke-width="2"/>
+            `;
+        }
+
+        // ===== Totais Gerais da Corporação (caixas à esquerda do Comando Geral) =====
+        function populateTotaisGerais() {
+            const totais = getTotals('COMANDO GERAL');
+            const elEfetivo = document.getElementById('total-geral-efetivo');
+            const elViaturas = document.getElementById('total-geral-viaturas');
+            const elMateriais = document.getElementById('total-geral-materiais');
+            const elFinancas = document.getElementById('total-geral-financas');
+            const elOcorrencias = document.getElementById('total-geral-ocorrencias');
+            const elVistorias = document.getElementById('total-geral-vistorias');
+            if (!elEfetivo) return;
+
+            elEfetivo.innerText = totais.efetivo;
+            elViaturas.innerText = totais.viaturas;
+            elMateriais.innerText = `${totais.materiaisPct}%`;
+            elFinancas.innerText = `R$ ${(totais.financas / 1000).toFixed(0)}k`;
+            // Ocorrências e Vistorias ainda não possuem base de dados própria: valores ilustrativos
+            // derivados do total de Ações Específicas, até que essas séries sejam integradas.
+            elOcorrencias.innerText = Math.round(totais.acoes * 2.4);
+            elVistorias.innerText = Math.round(totais.acoes * 0.6);
+        }
+
+        window.addEventListener('load', populateTotaisGerais);
+        window.addEventListener('load', drawConnectors);
+        window.addEventListener('resize', drawConnectors);
+        // Redesenha após o carregamento das fontes (evita desalinhos por reflow tardio)
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(drawConnectors);
+        }
+    </script>
+</div>
+</body>
+</html>
