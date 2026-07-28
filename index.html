@@ -100,71 +100,70 @@
             
             <!-- Bloco Comando Geral -->
             <div class="relative flex flex-col items-center w-full">
-                <div class="relative flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-0 w-full">
-                    <!-- Totais Gerais da Corporação - atalhos para os indicadores do Comando Geral -->
-                    <div class="order-2 lg:order-1 lg:absolute lg:right-full lg:mr-6 grid grid-cols-2 gap-2 w-full max-w-xs lg:w-56 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                        <div onclick="abrirAtalhoComandoGeral('Efetivo')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">Efetivo</div>
-                        </div>
-                        <div onclick="abrirAtalhoComandoGeral('Viaturas')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">Viaturas</div>
-                        </div>
-                        <div onclick="abrirAtalhoComandoGeral('Materiais')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">Materiais</div>
-                        </div>
-                        <div onclick="abrirAtalhoComandoGeral('Finanças')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">Finanças</div>
-                        </div>
-                    </div>
 
-                    <!-- Comando Geral (Centralizado) -->
-                    <div onclick="openPanel('COMANDO GERAL')" class="order-1 lg:order-2 org-card card-main bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 border-2 border-amber-300 rounded-xl p-4 w-72 text-center cursor-pointer relative z-10">
-                        <div class="flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-star text-amber-200 text-sm"></i>
-                            <div class="text-lg font-black text-white uppercase tracking-wider">COMANDO GERAL</div>
-                            <i class="fa-solid fa-star text-amber-200 text-sm"></i>
-                        </div>
+                <!-- Totais Gerais da Corporação - atalhos para os indicadores do Comando Geral (acima do Comando Geral) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-md mb-3 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                    <div onclick="abrirAtalhoComandoGeral('Efetivo')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">Efetivo</div>
+                    </div>
+                    <div onclick="abrirAtalhoComandoGeral('Viaturas')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">Viaturas</div>
+                    </div>
+                    <div onclick="abrirAtalhoComandoGeral('Materiais')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">Materiais</div>
+                    </div>
+                    <div onclick="abrirAtalhoComandoGeral('Finanças')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 min-h-[2.75rem] flex items-center justify-center text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">Finanças</div>
+                    </div>
+                </div>
+
+                <!-- Comando Geral (Centralizado) -->
+                <div onclick="openPanel('COMANDO GERAL')" class="org-card card-main bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 border-2 border-amber-300 rounded-xl p-4 w-72 text-center cursor-pointer relative z-10">
+                    <div class="flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-star text-amber-200 text-sm"></i>
+                        <div class="text-lg font-black text-white uppercase tracking-wider">COMANDO GERAL</div>
+                        <i class="fa-solid fa-star text-amber-200 text-sm"></i>
+                    </div>
+                    
+                    <div class="text-[11px] text-amber-200 tracking-widest mt-0.5">Comandante Geral</div>
+                    <div class="mt-2 text-[10px] bg-black/20 rounded-full py-1 px-3 text-amber-100 inline-flex items-center gap-1 font-semibold">
+                        <i class="fa-solid fa-chart-line"></i> Detalhar
+                    </div>
+                </div>
+
+                <!-- Assessorias do Comando (coladas logo abaixo do Comando Geral) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full max-w-2xl bg-slate-50 p-2 rounded-xl border border-slate-200 border-t-0 rounded-t-none">
+                    <div onclick="openPanel('GCG')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">GCG</div>
                         
-                        <div class="text-[11px] text-amber-200 tracking-widest mt-0.5">Comandante Geral</div>
-                        <div class="mt-2 text-[10px] bg-black/20 rounded-full py-1 px-3 text-amber-100 inline-flex items-center gap-1 font-semibold">
-                            <i class="fa-solid fa-chart-line"></i> Detalhar
-                        </div>
+                        <div class="text-[9px] text-slate-500">Chefe</div>
                     </div>
-
-                    <!-- Assessorias do Comando -->
-                    <div class="order-3 lg:absolute lg:left-full lg:ml-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 w-full max-w-md lg:w-80 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                        <div onclick="openPanel('GCG')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">GCG</div>
-                            
-                            <div class="text-[9px] text-slate-500">Chefe</div>
-                        </div>
-                        <div onclick="openPanel('AECI')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">AECI</div>
-                            
-                            <div class="text-[9px] text-slate-500">Assessor Especial</div>
-                        </div>
-                        <div onclick="openPanel('CPO')" class="org-card lg:col-span-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">CPO</div>
-                            
-                            <div class="text-[9px] text-slate-500">Chefe</div>
-                        </div>
-                        <div onclick="openPanel('CCS')" class="org-card lg:col-span-2 lg:col-start-2 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">CCS</div>
-                            
-                            <div class="text-[9px] text-slate-500">Chefe</div>
-                        </div>
-                        <div onclick="openPanel('CI')" class="org-card lg:col-span-2 lg:col-start-4 bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
-                            <div class="text-xs font-bold text-cbmpeNavy">CI</div>
-                            
-                            <div class="text-[9px] text-slate-500">Chefe</div>
-                        </div>
+                    <div onclick="openPanel('AECI')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">AECI</div>
+                        
+                        <div class="text-[9px] text-slate-500">Assessor Especial</div>
+                    </div>
+                    <div onclick="openPanel('CPO')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">CPO</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
+                    </div>
+                    <div onclick="openPanel('CCS')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">CCS</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
+                    </div>
+                    <div onclick="openPanel('CI')" class="org-card bg-slate-100 border border-slate-300 hover:border-amber-500 rounded-lg p-2 text-center cursor-pointer">
+                        <div class="text-xs font-bold text-cbmpeNavy">CI</div>
+                        
+                        <div class="text-[9px] text-slate-500">Chefe</div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Bloco Subcomando Geral -->
-            <div class="relative flex flex-col items-center w-full">
+            <!-- Bloco Subcomando Geral (espaçamento maior para reforçar independência) -->
+            <div class="relative flex flex-col items-center w-full mt-14">
                 <div class="relative flex items-center justify-center">
                     <!-- Subcomando Geral (Centralizado em uma linha só) -->
                     <div id="node-subcomando" onclick="openPanel('SUBCOMANDO GERAL')" class="org-card card-main-yellow bg-gradient-to-br from-yellow-500 via-yellow-600 to-amber-700 border-2 border-yellow-300 rounded-xl p-4 w-72 text-center cursor-pointer relative z-10">
@@ -182,19 +181,19 @@
 
                 </div>
 
-                <!-- Assessorias do Subcomando (abaixo no mobile, ao lado no desktop) -->
-                <div class="mt-4 lg:mt-0 lg:absolute lg:left-1/2 lg:ml-40 lg:top-0 grid grid-cols-3 lg:flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 w-full max-w-md lg:w-auto">
-                    <div onclick="openPanel('GSG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[10rem] text-center cursor-pointer">
+                <!-- Assessorias do Subcomando (coladas logo abaixo do Subcomando Geral) -->
+                <div class="grid grid-cols-3 gap-2 w-full max-w-md bg-slate-50 p-2 rounded-xl border border-slate-200 border-t-0 rounded-t-none">
+                    <div onclick="openPanel('GSG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 text-center cursor-pointer">
                         <div class="text-xs font-bold text-cbmpeNavy">GSG</div>
                         
                         <div class="text-[9px] text-slate-500">Chefe</div>
                     </div>
-                    <div onclick="openPanel('AJG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[7rem] text-center cursor-pointer">
+                    <div onclick="openPanel('AJG')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 text-center cursor-pointer">
                         <div class="text-xs font-bold text-cbmpeNavy">AJG</div>
                         
                         <div class="text-[9px] text-slate-500">Chefe</div>
                     </div>
-                    <div onclick="openPanel('CPP')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 lg:w-auto lg:min-w-[7rem] text-center cursor-pointer">
+                    <div onclick="openPanel('CPP')" class="org-card bg-slate-100 border border-slate-300 hover:border-yellow-500 rounded-lg p-2 text-center cursor-pointer">
                         <div class="text-xs font-bold text-cbmpeNavy">CPP</div>
                         
                         <div class="text-[9px] text-slate-500">Chefe</div>
@@ -461,7 +460,7 @@
         </div>
 
         <!-- Grade das 12 caixas do indicador (Ações Específicas / Efetivo / Viaturas / Materiais / Finanças) - preenchida dinamicamente via JS -->
-        <div id="subpage-atividades-block" class="hidden grid grid-cols-4 grid-rows-3 gap-4">
+        <div id="subpage-atividades-block" class="hidden grid grid-cols-2 grid-rows-2 gap-6 max-w-xl mx-auto">
             <!-- Dinâmico: ver popularGradeIndicador() -->
         </div>
     </div>
@@ -888,7 +887,7 @@
         function popularGradeIndicador(indicador) {
             const grade = document.getElementById('subpage-atividades-block');
             let html = '';
-            for (let i = 1; i <= 12; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const numero = String(i).padStart(2, '0');
                 const nomeItem = `${indicador} ${numero}`;
                 html += `<div onclick="abrirItemEmConstrucao('${nomeItem}')" class="kpi-card bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center gap-1 text-center min-h-[110px] cursor-pointer"><i class="fa-solid fa-list-check text-amber-600 text-lg mb-1"></i><div class="text-sm font-bold text-cbmpeNavy">${nomeItem}</div></div>`;
