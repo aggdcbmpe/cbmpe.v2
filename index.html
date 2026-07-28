@@ -41,9 +41,6 @@
         @media (max-width: 900px) {
             body { padding: 0.5rem !important; }
         }
-        .connector-line { background-color: #94a3b8; }
-        .tree-line-v { width: 2px; background: linear-gradient(to bottom, #94a3b8, #cbd5e1); margin: 0 auto; position: relative; }
-        .tree-line-h { height: 2px; background-color: #94a3b8; }
         .org-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
         .org-card::before {
             content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
@@ -70,7 +67,7 @@
 <div class="page-wrap">
 
     <!-- Header -->
-    <div class="glass bg-white/90 border border-slate-200 rounded-2xl p-5 mb-8 flex justify-between items-center shadow-xl relative overflow-hidden">
+    <div class="glass bg-white/90 border border-slate-200 rounded-2xl p-5 mb-8 shadow-xl relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-r from-amber-600/10 via-transparent to-transparent pointer-events-none"></div>
         <div class="relative z-10">
             <h1 class="text-2xl font-black text-cbmpeNavy tracking-wide flex items-center gap-3">
@@ -84,7 +81,7 @@
                 Painel Interativo de Gestão Estratégica do CBMPE
             </p>
         </div>
-        <div class="relative z-10 flex items-center gap-3">
+        <div class="relative z-10 flex flex-wrap items-center gap-3 mt-4">
             <button id="btn-back-panel" onclick="goBackPanel()" class="hidden bg-slate-100 hover:bg-slate-200 text-cbmpeNavy font-bold py-2.5 px-5 rounded-lg border border-slate-300 transition-all flex items-center gap-2 shadow-lg hover:-translate-y-0.5">
                 <i class="fa-solid fa-rotate-left"></i> Voltar ao Painel Anterior
             </button>
@@ -164,8 +161,6 @@
                     </div>
                 </div>
 
-                <!-- Linha Conectora V, perfeitamente centralizada sob o card do Comando Geral -->
-                <div class="tree-line-v h-8"></div>
             </div>
 
             <!-- Bloco Subcomando Geral -->
@@ -206,14 +201,10 @@
                     </div>
                 </div>
 
-                <!-- Linha Conectora V para Bifurcação -->
-                <div class="tree-line-v h-8"></div>
             </div>
 
             <!-- Container com conectores dinâmicos (SVG) ligando o Subcomando a DGO e DPLAG -->
-            <div id="tree-root-dgo-dplag" class="relative w-full pt-10">
-                <svg id="connectorSvg" class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index:0;"></svg>
-
+            <div id="tree-root-dgo-dplag" class="relative w-full pt-0 lg:pt-10">
                 <!-- BIFURCAÇÃO PRINCIPAL: DGO x DPLAG -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-[1400px] mx-auto relative" style="z-index:10;">
 
@@ -971,44 +962,6 @@
             openPanel(anterior, true);
         }
 
-        // ===== Conectores dinâmicos entre Subcomando Geral -> DGO / DPLAG =====
-        function drawConnectors() {
-            const svg = document.getElementById('connectorSvg');
-            const container = document.getElementById('tree-root-dgo-dplag');
-            const start = document.getElementById('node-subcomando');
-            const dgo = document.getElementById('node-dgo');
-            const dplag = document.getElementById('node-dga');
-            if (!svg || !container || !start || !dgo || !dplag) return;
-            if (document.getElementById('hub-view').classList.contains('hidden')) return;
-
-            const containerRect = container.getBoundingClientRect();
-            svg.setAttribute('width', containerRect.width);
-            svg.setAttribute('height', containerRect.height);
-            svg.setAttribute('viewBox', `0 0 ${containerRect.width} ${containerRect.height}`);
-
-            const startRect = start.getBoundingClientRect();
-            const dgoRect = dgo.getBoundingClientRect();
-            const dplagRect = dplag.getBoundingClientRect();
-
-            // Ponto de partida: centro horizontal do card Subcomando, no topo deste container
-            // (a linha vertical estática do bloco Subcomando já cobre o trecho acima)
-            const sx = (startRect.left + startRect.right) / 2 - containerRect.left;
-            const sy = 0;
-
-            const dgoX = (dgoRect.left + dgoRect.right) / 2 - containerRect.left;
-            const dgoY = dgoRect.top - containerRect.top;
-
-            const dplagX = (dplagRect.left + dplagRect.right) / 2 - containerRect.left;
-            const dplagY = dplagRect.top - containerRect.top;
-
-            const midY = Math.max(sy + 6, Math.min(dgoY, dplagY) / 2);
-
-            svg.innerHTML = `
-                <path d="M ${sx} ${sy} L ${sx} ${midY} L ${dgoX} ${midY} L ${dgoX} ${dgoY}" fill="none" stroke="#94a3b8" stroke-width="2"/>
-                <path d="M ${sx} ${sy} L ${sx} ${midY} L ${dplagX} ${midY} L ${dplagX} ${dplagY}" fill="none" stroke="#94a3b8" stroke-width="2"/>
-            `;
-        }
-
         // ===== Totais Gerais da Corporação (caixas à esquerda do Comando Geral) =====
         function populateTotaisGerais() {
             const totais = getTotals('COMANDO GERAL');
@@ -1031,12 +984,6 @@
         }
 
         window.addEventListener('load', populateTotaisGerais);
-        window.addEventListener('load', drawConnectors);
-        window.addEventListener('resize', drawConnectors);
-        // Redesenha após o carregamento das fontes (evita desalinhos por reflow tardio)
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(drawConnectors);
-        }
     </script>
 </div>
 </body>
