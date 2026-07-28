@@ -162,7 +162,7 @@
 
             </div>
 
-            <!-- Bloco Subcomando Geral (espaçamento maior para reforçar independência) -->
+            <!-- Bloco Subcomando Geral -->
             <div class="relative flex flex-col items-center w-full mt-14">
                 <div class="relative flex items-center justify-center">
                     <!-- Subcomando Geral (Centralizado em uma linha só) -->
@@ -202,8 +202,8 @@
 
             </div>
 
-            <!-- Container com conectores dinâmicos (SVG) ligando o Subcomando a DGO e DPLAG -->
-            <div id="tree-root-dgo-dplag" class="relative w-full pt-0 lg:pt-10">
+            <!-- Container das Diretorias com espaçamento vertical ajustado (mt-8 pt-6) -->
+            <div id="tree-root-dgo-dplag" class="relative w-full mt-8 pt-6">
                 <!-- BIFURCAÇÃO PRINCIPAL: DGO x DPLAG -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-[1400px] mx-auto relative" style="z-index:10;">
 
@@ -863,7 +863,6 @@
 
         const INDICADORES_COM_GRADE = ['Ações Específicas', 'Efetivo', 'Viaturas', 'Materiais', 'Finanças'];
 
-        // Preenche a grade com 4 caixas (01 a 04)
         function popularGradeIndicador(indicador) {
             const grade = document.getElementById('subpage-atividades-block');
             let html = '';
