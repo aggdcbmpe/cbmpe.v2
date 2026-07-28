@@ -459,8 +459,8 @@
             </div>
         </div>
 
-        <!-- Grade das 12 caixas do indicador (Ações Específicas / Efetivo / Viaturas / Materiais / Finanças) - preenchida dinamicamente via JS -->
-        <div id="subpage-atividades-block" class="hidden grid grid-cols-2 grid-rows-2 gap-6 max-w-xl mx-auto">
+        <!-- Grade das 4 caixas do indicador (01 a 04) - preenchida dinamicamente via JS -->
+        <div id="subpage-atividades-block" class="hidden grid grid-cols-2 grid-rows-2 gap-4 sm:gap-6 max-w-md mx-auto px-4 sm:px-0">
             <!-- Dinâmico: ver popularGradeIndicador() -->
         </div>
     </div>
@@ -567,8 +567,6 @@
         const TABLE_HEAD_PADRAO = `<tr><th class="p-3">Seção/Divisão/Grupamento/Centro</th><th class="p-3">Efetivo</th><th class="p-3">Viaturas</th><th class="p-3">Materiais</th><th class="p-3">Finanças</th><th class="p-3">Ações Específicas</th></tr>`;
 
         // ===== Dados-base (fictícios, porém coerentes) e lógica de pertencimento/agregação =====
-        // Cada chave representa o efetivo/recursos PRÓPRIOS daquela OME (sem contar as subordinadas).
-        // O total exibido no painel de uma OME "guarda-chuva" é a soma de tudo que está abaixo dela + o que é próprio.
         const orgData = {
             'COMANDO GERAL': { efetivo: 22, viaturas: 4, materiaisPct: 95, financas: 180000, financaPct: 93, acoes: 120 },
             'SUBCOMANDO GERAL': { efetivo: 14, viaturas: 3, materiaisPct: 92, financas: 95000, financaPct: 90, acoes: 70 },
@@ -625,7 +623,6 @@
             'CEFD': { efetivo: 14, viaturas: 1, materiaisPct: 88, financas: 30000, financaPct: 87, acoes: 35 }
         };
 
-        // Pertencimento real (quem soma em quem) - somente as OMEs que possuem caixa própria
         const orgTree = {
             'COMANDO GERAL': ['SUBCOMANDO GERAL', 'GCG', 'CI', 'CPO', 'AECI', 'CCS'],
             'SUBCOMANDO GERAL': ['DGO', 'DGA', 'GSG', 'AJG', 'CPP'],
@@ -638,9 +635,6 @@
             'DEIP': ['ABMG', 'CEFD']
         };
 
-        // Efetivo "próprio" de uma OME = soma do efetivo padronizado das suas linhas internas
-        // (Diretoria/Comando/Chefia, Assessoria, SAAdm, Divisões, Seções), excluindo as caixas
-        // próprias (que já entram pelo seu próprio total agregado).
         function ownEfetivoDinamico(setor) {
             const filhos = orgTree[setor] || [];
             const itens = subSetoresMap[setor] || [];
@@ -648,7 +642,6 @@
             return itensInternos.reduce((soma, nome) => soma + categoriaEfetivo(nome), 0);
         }
 
-        // Soma total (próprio + subordinadas), recursivo. % de materiais/finanças = média ponderada pelo efetivo.
         function getTotals(setor) {
             const own = orgData[setor] || { efetivo: 20, viaturas: 2, materiaisPct: 88, financas: 40000, financaPct: 88, acoes: 40 };
             const ownEfetivo = ownEfetivoDinamico(setor);
@@ -672,11 +665,8 @@
             return total;
         }
 
-        // Distribui um total inteiro entre n "linhas" (itens sem caixa própria), preservando a soma exata
-        // Padronização de efetivo por categoria de linha interna (não são caixas próprias)
         function categoriaEfetivo(nome) {
             const UNI = ['Chefia', 'Diretoria', 'Presidência', 'Comando', 'Subcomando'];
-            // Exceções pontuais (valor fixo diferente do padrão da categoria)
             const EXCECOES_5 = [
                 'Membros',
                 'Seção de Ações Preventivas - SAP',
@@ -685,11 +675,11 @@
                 'Seção de Marketing e Relações Públicas - SMRP'
             ];
             if (EXCECOES_5.includes(nome)) return 5;
-            if (UNI.includes(nome)) return 1;              // Diretoria / Comando / Chefia
-            if (/^Assessor/i.test(nome)) return 1;          // Assessoria
-            if (/^Secretaria/i.test(nome) || /SAAdm/i.test(nome)) return 5; // SAAdm
-            if (/^Divis/i.test(nome)) return 5;              // Divisões
-            return 50;                                       // Seções e demais unidades operacionais
+            if (UNI.includes(nome)) return 1;
+            if (/^Assessor/i.test(nome)) return 1;
+            if (/^Secretaria/i.test(nome) || /SAAdm/i.test(nome)) return 5;
+            if (/^Divis/i.test(nome)) return 5;
+            return 50;
         }
 
         function distribute(total, n) {
@@ -715,7 +705,7 @@
             return n === 1 ? '1 Militar' : `${n} Militares`;
         }
 
-        // ===== Estado de navegação (para o botão "Voltar ao Painel Anterior") =====
+        // ===== Estado de navegação =====
         let panelHistory = [];
         let currentPanel = null;
         let cameFromSubpage = false;
@@ -731,7 +721,6 @@
         }
 
         function openPanel(setor, isBack) {
-            // Empilha o painel atual no histórico, exceto quando estamos navegando "para trás"
             if (!isBack && currentPanel && currentPanel !== setor && !document.getElementById('panel-view').classList.contains('hidden')) {
                 panelHistory.push(currentPanel);
             }
@@ -745,7 +734,6 @@
             document.getElementById('btn-back').classList.remove('hidden');
             document.getElementById('btn-back-panel').classList.toggle('hidden', panelHistory.length === 0);
 
-            // Oculta a caixa de "Ações Específicas" para os quadrantes de Comando/Subcomando Geral
             const semAcoes = (setor === 'COMANDO GERAL' || setor === 'SUBCOMANDO GERAL');
             document.getElementById('kpi-card-acoes').classList.toggle('hidden', semAcoes);
             const kpiGrid = document.getElementById('kpi-grid');
@@ -756,7 +744,6 @@
             document.getElementById('panel-title').innerText = setor + " - Painel de Controle de Dados";
             document.getElementById('panel-officer').innerText = info.cargo;
 
-            // KPIs = soma agregada (próprio + tudo que está subordinado a essa OME)
             const totais = getTotals(setor);
             document.getElementById('kpi-efetivo').innerText = militarLabel(totais.efetivo);
             document.getElementById('kpi-viaturas').innerText = `${totais.viaturas} Unidades`;
@@ -764,7 +751,6 @@
             document.getElementById('kpi-financas').innerText = `R$ ${formatBRL(totais.financas)},00 Executado (${totais.financaPct}%)`;
             document.getElementById('kpi-pjes').innerText = `${totais.acoes} Atividades`;
 
-            // Tabela
             let thead = document.getElementById('table-head');
             let tbody = document.getElementById('table-body');
 
@@ -773,8 +759,6 @@
 
                 const ownVals = orgData[setor] || { efetivo: 20, viaturas: 2, materiaisPct: 88, financas: 40000, financaPct: 88, acoes: 40 };
                 const filhos = orgTree[setor] || [];
-                // Linhas que NÃO são caixas próprias (seções internas) usam efetivo padronizado por categoria.
-                // Linhas que SÃO caixas próprias usam seu total já agregado (com subordinadas).
                 const itensInternos = subSetoresMap[setor].filter(nome => !filhos.includes(nome));
 
                 const distViaturas = distribute(ownVals.viaturas, itensInternos.length);
@@ -805,9 +789,6 @@
                     }
 
                     const isLink = !!oficialData[sub] && sub !== setor;
-                    // Todas as linhas internas (Comando, Subcomando, SAC, Divisão de Operações, SBs,
-                    // Divisão Administrativa etc.) têm agora a mesma hierarquia: mesma seta "↳" e
-                    // abrem/fecham juntas com o toggle principal do setor.
                     const isIndentado = !isLink && sub.trim().startsWith('↳');
                     const nomeExibido = isIndentado ? sub.replace(/^↳\s*/, '') : sub;
 
@@ -880,23 +861,20 @@
             subpageIndicadorAtual = null;
         }
 
-        // Indicadores que exibem a grade de 12 caixas (em vez do placeholder de gráfico)
         const INDICADORES_COM_GRADE = ['Ações Específicas', 'Efetivo', 'Viaturas', 'Materiais', 'Finanças'];
 
-        // Preenche a grade de 12 caixas com o padrão "{Indicador} 01" ... "{Indicador} 12"
+        // Preenche a grade com 4 caixas (01 a 04)
         function popularGradeIndicador(indicador) {
             const grade = document.getElementById('subpage-atividades-block');
             let html = '';
             for (let i = 1; i <= 4; i++) {
                 const numero = String(i).padStart(2, '0');
                 const nomeItem = `${indicador} ${numero}`;
-                html += `<div onclick="abrirItemEmConstrucao('${nomeItem}')" class="kpi-card bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center gap-1 text-center min-h-[110px] cursor-pointer"><i class="fa-solid fa-list-check text-amber-600 text-lg mb-1"></i><div class="text-sm font-bold text-cbmpeNavy">${nomeItem}</div></div>`;
+                html += `<div onclick="abrirItemEmConstrucao('${nomeItem}')" class="kpi-card bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center gap-1 text-center min-h-[90px] sm:min-h-[100px] cursor-pointer"><i class="fa-solid fa-list-check text-amber-600 text-base mb-0.5"></i><div class="text-xs sm:text-sm font-bold text-cbmpeNavy">${nomeItem}</div></div>`;
             }
             grade.innerHTML = html;
         }
 
-        // Abre a "subpágina" de dashboard específico de um indicador (Efetivo, Viaturas, Materiais, Finanças, Ações Específicas)
-        // ocultarBotaoVoltarPainel: quando true, esconde o botão "Voltar ao Painel Anterior" (usado pelos atalhos da página inicial)
         function openSubPage(indicador, ocultarBotaoVoltarPainel) {
             document.getElementById('hub-view').classList.add('hidden');
             document.getElementById('panel-view').classList.add('hidden');
@@ -918,9 +896,6 @@
             }
         }
 
-        // Ao clicar em uma das 12 caixas (ex: "Viaturas 02"), exibe a "Página em construção"
-        // no lugar da grade, mantendo o título atualizado com o item clicado.
-        // O botão "Voltar ao Painel Anterior" sempre aparece aqui, para permitir retornar à grade de 12 caixas.
         function abrirItemEmConstrucao(nomeItem) {
             emItemConstrucao = true;
             document.getElementById('subpage-title').innerText = `${nomeItem} — ${currentPanel || 'CBMPE'}`;
@@ -929,16 +904,11 @@
             document.getElementById('btn-back-panel').classList.remove('hidden');
         }
 
-        // Atalho das caixas "Efetivo", "Viaturas", "Materiais" e "Finanças" na página inicial:
-        // vai direto para a página com as 12 caixinhas do indicador (mesmo destino de
-        // "Comando Geral" > indicador), sem passar pela tela do painel do Comando Geral.
         function abrirAtalhoComandoGeral(indicador) {
             currentPanel = 'COMANDO GERAL';
             openSubPage(indicador, true);
         }
 
-        // Botão "Voltar ao Painel Anterior": sai da "página em construção" de volta para a grade de 12 caixas,
-        // sai da subpágina para o painel, ou navega para o painel anterior da pilha
         function goBackPanel() {
             if (emItemConstrucao) {
                 emItemConstrucao = false;
@@ -961,7 +931,6 @@
             openPanel(anterior, true);
         }
 
-        // ===== Totais Gerais da Corporação (caixas à esquerda do Comando Geral) =====
         function populateTotaisGerais() {
             const totais = getTotals('COMANDO GERAL');
             const elEfetivo = document.getElementById('total-geral-efetivo');
@@ -976,8 +945,6 @@
             elViaturas.innerText = totais.viaturas;
             elMateriais.innerText = `${totais.materiaisPct}%`;
             elFinancas.innerText = `R$ ${(totais.financas / 1000).toFixed(0)}k`;
-            // Ocorrências e Vistorias ainda não possuem base de dados própria: valores ilustrativos
-            // derivados do total de Ações Específicas, até que essas séries sejam integradas.
             elOcorrencias.innerText = Math.round(totais.acoes * 2.4);
             elVistorias.innerText = Math.round(totais.acoes * 0.6);
         }
